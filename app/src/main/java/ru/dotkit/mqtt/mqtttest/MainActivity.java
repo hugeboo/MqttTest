@@ -22,6 +22,7 @@ public class MainActivity extends AppCompatActivity {
                 Client client = new Client();
                 try {
                     client.openConnection();
+                    //Thread.sleep(100*1000);
                     client.sendData("Hello! It's me!".getBytes());
                     client.closeConnection();
                 } catch (Exception e){

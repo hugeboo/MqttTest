@@ -25,6 +25,7 @@ public final class ConnectionWorker implements Runnable {
 
         /* получаем входной поток */
         try {
+            //clientSocket.setSoTimeout(1000);
             inputStream = clientSocket.getInputStream();
         } catch (IOException e) {
             System.out.println("Cant get input stream");

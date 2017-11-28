@@ -51,7 +51,7 @@
 //            case Len:
 //                _buff[_buffCount] = b;
 //                _buffCount += 1;
-//                int len = CodecUtils.decodeRemainingLenght(_buff, _buffCount);
+//                int len = CodecUtils.decodeRemainingLength(_buff, _buffCount);
 //                if (len == 0) {
 //                    _message.setRemainingLength(len);
 //                    _state = State.Idle;

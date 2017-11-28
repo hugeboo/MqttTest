@@ -105,7 +105,7 @@ public abstract class AbstractMessage {
         m_dupFlag = (fixHeader & 0x08) == 0x08;
         m_retainFlag = (fixHeader & 0x01) == 0x01;
         m_qos = QOSType.values()[(fixHeader & 0x06) >> 1];
-        m_remainingLength = CodecUtils.decodeRemainingLenght(stream);
+        m_remainingLength = CodecUtils.decodeRemainingLength(stream);
         if (m_remainingLength == -1) {
             throw new Exception("Invalid remainingLength");
         }

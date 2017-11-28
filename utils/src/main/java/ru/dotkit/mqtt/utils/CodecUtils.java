@@ -25,7 +25,7 @@ public final class CodecUtils {
      *
      * @return the decoded length or -1 if error.
      */
-    public static int decodeRemainingLenght(InputStream in) throws IOException {
+    public static int decodeRemainingLength(@NonNull InputStream in) throws IOException {
         int multiplier = 1;
         int value = 0;
         byte digit;

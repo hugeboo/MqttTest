@@ -1,4 +1,4 @@
-package ru.dotkit.mqtt.utils;
+package ru.dotkit.mqtt.utils.messages;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -8,6 +8,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
+import ru.dotkit.mqtt.utils.CodecUtils;
+import ru.dotkit.mqtt.utils.MessageFactory;
 import ru.dotkit.mqtt.utils.messages.AbstractMessage;
 import ru.dotkit.mqtt.utils.messages.ConnAckMessage;
 import ru.dotkit.mqtt.utils.messages.ConnectMessage;

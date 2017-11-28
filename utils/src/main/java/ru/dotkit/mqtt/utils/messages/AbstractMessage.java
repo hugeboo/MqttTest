@@ -102,9 +102,9 @@ public abstract class AbstractMessage {
 
     @CallSuper
     public void decode(InputStream stream, byte fixHeader, byte protocolVersion) throws Exception {
-        m_dupFlag = (fixHeader & 0x0F) == 0x0F;
+        m_dupFlag = (fixHeader & 0x08) == 0x08;
         m_retainFlag = (fixHeader & 0x01) == 0x01;
-        m_qos = QOSType.values()[(fixHeader & 0x06) >> 2];
+        m_qos = QOSType.values()[(fixHeader & 0x06) >> 1];
         m_remainingLength = CodecUtils.decodeRemainingLenght(stream);
         if (m_remainingLength == -1) {
             throw new Exception("Invalid remainingLength");

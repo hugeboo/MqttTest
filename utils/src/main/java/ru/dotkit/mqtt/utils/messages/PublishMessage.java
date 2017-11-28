@@ -38,13 +38,13 @@ public class PublishMessage extends AbstractMessage {//} MessageIDMessage {
     private String m_topicName;
     private byte[] m_payload;
 
-    private Integer m_messageID; //could be null if Qos is == 0
+    private int m_messageID; //could be null if Qos is == 0
 
-    public Integer getMessageID() {
+    public int getMessageID() {
         return m_messageID;
     }
 
-    public void setMessageID(Integer messageID) {
+    public void setMessageID(int messageID) {
         this.m_messageID = messageID;
     }
 
@@ -81,8 +81,6 @@ public class PublishMessage extends AbstractMessage {//} MessageIDMessage {
 
         int varHeaderLength = 0;
 
-        m_messageID = CodecUtils.readUShort(stream);
-
         //Topic name
         ReadedString topic = CodecUtils.readString(stream);
         if (topic == null) {
@@ -95,7 +93,7 @@ public class PublishMessage extends AbstractMessage {//} MessageIDMessage {
         varHeaderLength += topic.byteLength;
 
         if (m_qos == QOSType.LEAST_ONE || m_qos == QOSType.EXACTLY_ONCE) {
-            setMessageID(CodecUtils.readUShort(stream));
+            m_messageID = CodecUtils.readUShort(stream);
         }
         varHeaderLength += 2;
 
@@ -121,7 +119,7 @@ public class PublishMessage extends AbstractMessage {//} MessageIDMessage {
         CodecUtils.writeString(variableHeaderBuff, m_topicName);
 
         if (m_qos == QOSType.LEAST_ONE || m_qos == QOSType.EXACTLY_ONCE) {
-            if (getMessageID() == null) {
+            if (getMessageID() == 0) {
                 throw new IllegalArgumentException("Found a message with QOS 1 or 2 and not MessageID setted");
             }
             CodecUtils.writeUShort(variableHeaderBuff, getMessageID());

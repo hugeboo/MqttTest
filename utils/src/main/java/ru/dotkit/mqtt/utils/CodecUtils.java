@@ -65,7 +65,7 @@ public final class CodecUtils {
     }
 
     public static int readUShort(InputStream stream) throws IOException {
-        return stream.read() + 256 * stream.read();
+        return stream.read() * 256 + stream.read();
     }
 
     @NonNull
@@ -82,8 +82,8 @@ public final class CodecUtils {
 
     public static void writeUShort(OutputStream stream, int value) throws IOException {
         byte msb = (byte) (value / 256);
-        stream.write(value - msb * 256);
         stream.write(msb);
+        stream.write(value - msb * 256);
     }
 
     public static int writeString(OutputStream stream, String s) throws IOException {

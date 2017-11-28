@@ -32,13 +32,13 @@ import ru.dotkit.mqtt.utils.ReadedString;
 public class UnsubscribeMessage extends AbstractMessage {//} MessageIDMessage {
     List<String> m_types = new ArrayList<String>();
 
-    private Integer m_messageID; //could be null if Qos is == 0
+    private int m_messageID; //could be null if Qos is == 0
 
-    public Integer getMessageID() {
+    public int getMessageID() {
         return m_messageID;
     }
 
-    public void setMessageID(Integer messageID) {
+    public void setMessageID(int messageID) {
         this.m_messageID = messageID;
     }
 

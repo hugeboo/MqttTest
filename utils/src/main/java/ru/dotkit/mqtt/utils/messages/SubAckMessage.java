@@ -58,7 +58,12 @@ public class SubAckMessage extends AbstractMessage {//} MessageIDMessage {
         super.decode(stream, fixHeader, protocolVersion);
 
         m_messageID = CodecUtils.readUShort(stream);
-        throw new Exception("Not implemented");
+
+        //Qos array
+        for (int i = 0; i < m_remainingLength-2; i++) {
+            byte qos = (byte)stream.read();
+            addType(AbstractMessage.QOSType.values()[qos]);
+        }
     }
 
     @Override

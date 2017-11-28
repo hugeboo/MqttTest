@@ -27,13 +27,13 @@ import ru.dotkit.mqtt.utils.CodecUtils;
  */
 public class UnsubAckMessage extends AbstractMessage {//} MessageIDMessage {
 
-    private Integer m_messageID; //could be null if Qos is == 0
+    private int m_messageID; //could be null if Qos is == 0
 
-    public Integer getMessageID() {
+    public int getMessageID() {
         return m_messageID;
     }
 
-    public void setMessageID(Integer messageID) {
+    public void setMessageID(int messageID) {
         this.m_messageID = messageID;
     }
 

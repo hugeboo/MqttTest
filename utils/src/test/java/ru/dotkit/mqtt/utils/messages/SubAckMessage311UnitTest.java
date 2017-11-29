@@ -38,7 +38,7 @@ public class SubAckMessage311UnitTest {
         assertEquals(0x030F, m.getMessageID());
         assertArrayEquals(
                 new int[]{0x00, 0x01, 0x02},
-                new int[]{m.types().get(0).ordinal(), m.types().get(1).ordinal(), m.types().get(2).ordinal()});
+                new int[]{m.types().get(0), m.types().get(1), m.types().get(2)});
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         m.encode(out, p);

@@ -7,13 +7,13 @@ import java.net.ServerSocket;
  * Created by Sergey on 25.11.2017.
  */
 
-public final class Server implements Runnable {
+public final class Example_Server implements Runnable {
 
     /**
      * Реализация шаблона Singleton
      * {@link 'http://en.wikipedia.org/wiki/Singleton_pattern'}
      */
-    private static volatile Server instance = null;
+    private static volatile Example_Server instance = null;
 
     /* Порт, на который сервер принимает соеденения */
     private final int SERVER_PORT = 6789;
@@ -21,14 +21,14 @@ public final class Server implements Runnable {
     /* Сокет, который обрабатывает соединения на сервере */
     private ServerSocket serverSoket = null;
 
-    private Server() {
+    private Example_Server() {
     }
 
-    public static Server getServer() {
+    public static Example_Server getServer() {
         if (instance == null) {
-            synchronized (Server.class) {
+            synchronized (Example_Server.class) {
                 if (instance == null) {
-                    instance = new Server();
+                    instance = new Example_Server();
                 }
             }
         }
@@ -50,11 +50,11 @@ public final class Server implements Runnable {
             /* старт приема соединений на сервер */
             while (true) {
 
-                ConnectionWorker worker = null;
+                Example_ConnectionWorker worker = null;
 
                 try {
                     /* ждем нового соединения */
-                    worker = new ConnectionWorker(serverSoket.accept());
+                    worker = new Example_ConnectionWorker(serverSoket.accept());
                     System.out.println("Get client connection");
 
                     /* создается новый поток, в котором обрабатывается соединение */

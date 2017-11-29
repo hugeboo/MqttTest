@@ -45,17 +45,22 @@ public abstract class AbstractMessage {
     public static final byte PINGRESP = 13; //PING Response
     public static final byte DISCONNECT = 14; //Client is Disconnecting
 
-    public static enum QOSType {
-        MOST_ONE, LEAST_ONE, EXACTLY_ONCE, RESERVED;
+    public static final byte QOS_0 = 0;
+    public static final byte QOS_1 = 1;
+    public static final byte QOS_2 = 2;
+    public static final byte QOS_RESERVED = 3;
 
-        public static String formatQoS(QOSType qos) {
-            return String.format("%d - %s", qos.ordinal(), qos.name());
-        }
-    }
+//    public static enum QOSType {
+//        MOST_ONE, LEAST_ONE, EXACTLY_ONCE, RESERVED;
+//
+//        public static String formatQoS(QOSType qos) {
+//            return String.format("%d - %s", qos.ordinal(), qos.name());
+//        }
+//    }
 
     //type
     protected boolean m_dupFlag;
-    protected QOSType m_qos;
+    protected byte m_qos;//QOSType m_qos;
     protected boolean m_retainFlag;
     protected int m_remainingLength;
     protected byte m_messageType;
@@ -76,11 +81,11 @@ public abstract class AbstractMessage {
         this.m_dupFlag = dupFlag;
     }
 
-    public QOSType getQos() {
+    public byte getQos() {
         return m_qos;
     }
 
-    public void setQos(QOSType qos) {
+    public void setQos(byte qos) {
         this.m_qos = qos;
     }
 
@@ -104,12 +109,12 @@ public abstract class AbstractMessage {
     public void decode(InputStream stream, byte fixHeader, byte protocolVersion) throws Exception {
         m_dupFlag = (fixHeader & 0x08) == 0x08;
         m_retainFlag = (fixHeader & 0x01) == 0x01;
-        m_qos = QOSType.values()[(fixHeader & 0x06) >> 1];
+        m_qos = (byte)((fixHeader & 0x06) >> 1);
         m_remainingLength = CodecUtils.decodeRemainingLength(stream);
         if (m_remainingLength == -1) {
             throw new Exception("Invalid remainingLength");
         }
-        if (m_qos == QOSType.RESERVED) {
+        if (m_qos == QOS_RESERVED) {
             throw new Exception("Received a PUBLISH with QoS flags setted 10 b11, MQTT 3.1.1 violation");
         }
     }
@@ -129,7 +134,7 @@ public abstract class AbstractMessage {
         if (message.isRetainFlag()) {
             flags |= 0x01;
         }
-        flags |= ((message.getQos().ordinal() & 0x03) << 1);
+        flags |= (message.getQos() & 0x03) << 1;
         return flags;
     }
 }

@@ -53,7 +53,7 @@ public class ConnectMessage311UnitTest {
         assertTrue(m.isUserFlag());
         assertTrue(m.isPasswordFlag());
         assertTrue(m.isWillRetain());
-        assertEquals(AbstractMessage.QOSType.EXACTLY_ONCE, m.getWillQos());
+        assertEquals(AbstractMessage.QOS_2, m.getWillQos());
         assertTrue(m.isWillFlag());
         assertTrue(m.isCleanSession());
         assertEquals(0x0A, m.getKeepAlive());

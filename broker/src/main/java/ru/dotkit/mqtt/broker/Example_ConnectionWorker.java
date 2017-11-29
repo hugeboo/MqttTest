@@ -8,7 +8,7 @@ import java.net.Socket;
  * Created by Sergey on 25.11.2017.
  */
 
-public final class ConnectionWorker implements Runnable {
+public final class Example_ConnectionWorker implements Runnable {
 
     /* сокет, через который происходит обмен данными с клиентом*/
     private Socket clientSocket = null;
@@ -16,7 +16,7 @@ public final class ConnectionWorker implements Runnable {
     /* входной поток, через который получаем данные с сокета */
     private InputStream inputStream = null;
 
-    public ConnectionWorker(Socket socket) {
+    public Example_ConnectionWorker(Socket socket) {
         clientSocket = socket;
     }
 

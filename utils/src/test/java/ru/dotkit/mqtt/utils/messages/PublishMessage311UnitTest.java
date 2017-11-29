@@ -38,7 +38,7 @@ public class PublishMessage311UnitTest {
         m.decode(in, fh, p);
         assertTrue(m.isDupFlag());
         assertTrue(m.isRetainFlag());
-        assertEquals(AbstractMessage.QOSType.LEAST_ONE, m.getQos());
+        assertEquals(AbstractMessage.QOS_1, m.getQos());
         assertEquals("A", m.getTopicName());
         assertEquals(0x000F, m.getMessageID());
         assertArrayEquals(new byte[]{0x01, 0x02, 0x03}, m.getPayload());

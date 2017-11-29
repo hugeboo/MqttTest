@@ -7,7 +7,7 @@ import java.net.Socket;
  * Created by Sergey on 25.11.2017.
  */
 
-public final class Client {
+public final class Example_Client {
 
     private static final String LOG_TAG = "myServerApp";
 
@@ -20,7 +20,7 @@ public final class Client {
     // сокет, через которий приложения общается с сервером
     private Socket mSocket = null;
 
-    public Client() {
+    public Example_Client() {
     }
 
     @Override

@@ -39,17 +39,17 @@ public class SubAckMessage extends AbstractMessage {//} MessageIDMessage {
         this.m_messageID = messageID;
     }
 
-    List<QOSType> m_types = new ArrayList<QOSType>();
+    List<Byte> m_types = new ArrayList<Byte>();
     
     public SubAckMessage() {
         m_messageType = AbstractMessage.SUBACK;
     }
 
-    public List<QOSType> types() {
+    public List<Byte> types() {
         return m_types;
     }
 
-    public void addType(QOSType type) {
+    public void addType(Byte type) {
         m_types.add(type);
     }
 
@@ -62,7 +62,7 @@ public class SubAckMessage extends AbstractMessage {//} MessageIDMessage {
         //Qos array
         for (int i = 0; i < m_remainingLength-2; i++) {
             byte qos = (byte)stream.read();
-            addType(AbstractMessage.QOSType.values()[qos]);
+            addType(qos);
         }
     }
 
@@ -75,8 +75,8 @@ public class SubAckMessage extends AbstractMessage {//} MessageIDMessage {
         }
         CodecUtils.encodeRemainingLength(stream, 2 + m_types.size());
         CodecUtils.writeUShort(stream, getMessageID());
-        for (AbstractMessage.QOSType c : m_types) {
-            stream.write(c.ordinal());
+        for (Byte c : m_types) {
+            stream.write(c);
         }
     }
 }

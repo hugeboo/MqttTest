@@ -67,7 +67,7 @@ public class SubscribeMessage extends AbstractMessage {// MessageIDMessage {
     public SubscribeMessage() {
         //Subscribe has always QoS 1
         m_messageType = AbstractMessage.SUBSCRIBE;
-        m_qos = AbstractMessage.QOSType.LEAST_ONE;
+        m_qos = QOS_1;
     }
 
     public List<Couple> subscriptions() {
@@ -84,7 +84,7 @@ public class SubscribeMessage extends AbstractMessage {// MessageIDMessage {
 
         m_messageID = CodecUtils.readUShort(stream);
 
-        if (m_qos != QOSType.LEAST_ONE) {
+        if (m_qos != QOS_1) {
             throw new Exception();
         }
 

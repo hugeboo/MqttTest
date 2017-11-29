@@ -34,7 +34,7 @@ public class ConnectMessage extends AbstractMessage {
     //Connection flags
     boolean m_cleanSession;
     boolean m_willFlag;
-    AbstractMessage.QOSType m_willQos;
+    byte m_willQos;//AbstractMessage.QOSType m_willQos;
     boolean m_willRetain;
     boolean m_passwordFlag;
     boolean m_userFlag;
@@ -107,11 +107,11 @@ public class ConnectMessage extends AbstractMessage {
         this.m_willFlag = willFlag;
     }
 
-    public AbstractMessage.QOSType getWillQos() {
+    public byte getWillQos() {
         return m_willQos;
     }
 
-    public void setWillQos(AbstractMessage.QOSType willQos) {
+    public void setWillQos(byte willQos) {
         this.m_willQos = willQos;
     }
 
@@ -176,7 +176,7 @@ public class ConnectMessage extends AbstractMessage {
         }
 
         if (m_protocolVersion == CodecUtils.VERSION_3_1_1) {
-            if (isDupFlag() || isRetainFlag() || getQos() != AbstractMessage.QOSType.MOST_ONE) {
+            if (isDupFlag() || isRetainFlag() || getQos() != QOS_0) {
                 throw new Exception();
             }
         }
@@ -206,7 +206,7 @@ public class ConnectMessage extends AbstractMessage {
 
         m_cleanSession = cleanSession;
         m_willFlag = willFlag;
-        m_willQos = QOSType.values()[willQos];
+        m_willQos = willQos;
         m_willRetain = willRetain;
         m_passwordFlag = passwordFlag;
         m_userFlag = userFlag;

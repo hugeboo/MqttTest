@@ -3,8 +3,8 @@ package ru.dotkit.mqtt.mqtttest;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
-import ru.dotkit.mqtt.broker.Server;
-import ru.dotkit.mqtt.client.Client;
+import ru.dotkit.mqtt.broker.Example_Server;
+import ru.dotkit.mqtt.client.Example_Client;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -13,13 +13,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Server server = Server.getServer();
-        server.start();
+        Example_Server exampleServer = Example_Server.getServer();
+        exampleServer.start();
 
         Runnable r = new Runnable() {
             @Override
             public void run() {
-                Client client = new Client();
+                Example_Client client = new Example_Client();
                 try {
                     client.openConnection();
                     //Thread.sleep(100*1000);

@@ -73,7 +73,7 @@ public class PublishMessage extends AbstractMessage {//} MessageIDMessage {
         super.decode(stream, fixHeader, protocolVersion);
 
         if (protocolVersion == CodecUtils.VERSION_3_1_1) {
-            if (m_qos == QOSType.MOST_ONE && m_dupFlag) {
+            if (m_qos == QOS_0 && m_dupFlag) {
                 //bad protocol, if QoS=0 => DUP = 0
                 throw new Exception("Received a PUBLISH with QoS=0 & DUP = 1, MQTT 3.1.1 violation");
             }
@@ -92,7 +92,7 @@ public class PublishMessage extends AbstractMessage {//} MessageIDMessage {
         m_topicName = topic.s;
         varHeaderLength += topic.byteLength;
 
-        if (m_qos == QOSType.LEAST_ONE || m_qos == QOSType.EXACTLY_ONCE) {
+        if (m_qos == QOS_1 || m_qos == QOS_2) {
             m_messageID = CodecUtils.readUShort(stream);
         }
         varHeaderLength += 2;
@@ -107,7 +107,7 @@ public class PublishMessage extends AbstractMessage {//} MessageIDMessage {
     public void encode(OutputStream stream, byte protocolVersion) throws Exception {
         super.encode(stream, protocolVersion);
 
-        if (m_qos == QOSType.RESERVED) {
+        if (m_qos == QOS_RESERVED) {
             throw new IllegalArgumentException("Found a message with RESERVED Qos");
         }
         if (m_topicName == null || m_topicName == "") {
@@ -118,7 +118,7 @@ public class PublishMessage extends AbstractMessage {//} MessageIDMessage {
 
         CodecUtils.writeString(variableHeaderBuff, m_topicName);
 
-        if (m_qos == QOSType.LEAST_ONE || m_qos == QOSType.EXACTLY_ONCE) {
+        if (m_qos == QOS_1 || m_qos == QOS_1) {
             if (getMessageID() == 0) {
                 throw new IllegalArgumentException("Found a message with QOS 1 or 2 and not MessageID setted");
             }

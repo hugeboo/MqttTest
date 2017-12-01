@@ -1,15 +1,17 @@
 package ru.dotkit.mqtt.broker;
 
+import ru.dotkit.mqtt.utils.TopicFilter;
+
 /**
  * Created by ssv on 29.11.2017.
  */
 
 final class ClientSubscription {
 
-    private final String _topicFilter;
+    private final TopicFilter _topicFilter;
     private byte _qos;
 
-    public String getTopicFilter() {
+    public TopicFilter getTopicFilter() {
         return _topicFilter;
     }
 
@@ -21,7 +23,12 @@ final class ClientSubscription {
         _qos = qos;
     }
 
-    public ClientSubscription(String topicFilter, byte qos){
+    public ClientSubscription(String topicFilter, byte qos) {
+        _topicFilter = new TopicFilter(topicFilter);
+        _qos = qos;
+    }
+
+    public ClientSubscription(TopicFilter topicFilter, byte qos) {
         _topicFilter = topicFilter;
         _qos = qos;
     }

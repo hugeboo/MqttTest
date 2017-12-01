@@ -1,20 +1,17 @@
 package ru.dotkit.mqtt.broker;
 
-import android.os.Message;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.TimeoutException;
 
 import ru.dotkit.mqtt.utils.CodecUtils;
 import ru.dotkit.mqtt.utils.MessageFactory;
+import ru.dotkit.mqtt.utils.TopicFilter;
 import ru.dotkit.mqtt.utils.messages.AbstractMessage;
 import ru.dotkit.mqtt.utils.messages.ConnAckMessage;
 import ru.dotkit.mqtt.utils.messages.ConnectMessage;
@@ -35,7 +32,7 @@ final class ClientSession {
     private final ServerContext _ctx;
     private final Socket _socket;
     private final HashMap<String, ClientSubscription> _mapSubscriptions = new HashMap<>();// class TopicFilter!!!
-    private final Object _socketSync = new Object();
+    private final Object _outputSocketSync = new Object();
     private final Object _subscriptionSync = new Object();
 
     private InputStream _inputStream;
@@ -103,7 +100,7 @@ final class ClientSession {
     }
 
     public void SendMessageToClient(AbstractMessage m) throws Exception {
-        synchronized (_socketSync) {
+        synchronized (_outputSocketSync) {
             m.encode(_outputStream, _protocolVersion);
         }
     }
@@ -207,7 +204,7 @@ final class ClientSession {
         }
 
         if (ack != null) {
-            synchronized (_socketSync) {
+            synchronized (_outputSocketSync) {
                 ack.encode(_outputStream, _protocolVersion);
             }
         }
@@ -227,7 +224,7 @@ final class ClientSession {
     private void processPingReq(PingReqMessage m) throws Exception {
         PingRespMessage ack = new PingRespMessage();
 
-        synchronized (_socketSync) {
+        synchronized (_outputSocketSync) {
             ack.encode(_outputStream, _protocolVersion);
         }
     }
@@ -243,12 +240,14 @@ final class ClientSession {
 
         synchronized (_subscriptionSync) {
             for (SubscribeMessage.Couple c : m.subscriptions()) {
+                TopicFilter tf = new TopicFilter(c.getTopicFilter());
+                String tfs = tf.toString();
                 ClientSubscription cs;
-                if (_mapSubscriptions.containsKey(c.getTopicFilter())) {
-                    cs = _mapSubscriptions.get(c.getTopicFilter());
-                    cs.setQos(c.getQos());
+                if (_mapSubscriptions.containsKey(tfs)) {
+                    cs = _mapSubscriptions.get(tfs);
+                    cs.setQos(AbstractMessage.QOS_0);//c.getQos()); поддерживаем только QOS_0 !!!
                 } else {
-                    cs = new ClientSubscription(c.getTopicFilter(), c.getQos());
+                    cs = new ClientSubscription(tf, c.getQos());
                 }
                 subs.add(cs);
                 ack.addType(AbstractMessage.QOS_0); // поддерживаем только QOS_0 !!!
@@ -257,7 +256,7 @@ final class ClientSession {
 
         _ctx.ProcessNewSubscriptions(this, subs);
 
-        synchronized (_socketSync) {
+        synchronized (_outputSocketSync) {
             ack.encode(_outputStream, _protocolVersion);
         }
     }
@@ -265,13 +264,14 @@ final class ClientSession {
     private void processUnsubscribe(UnsubscribeMessage m) throws Exception {
         synchronized (_subscriptionSync) {
             for (String t : m.topicFilters()) {
-                _mapSubscriptions.remove(t);
+                TopicFilter tf = new TopicFilter(t);
+                _mapSubscriptions.remove(tf.toString());
             }
         }
 
         UnsubscribeMessage ack = new UnsubscribeMessage();
         ack.setMessageID(m.getMessageID());
-        synchronized (_socketSync) {
+        synchronized (_outputSocketSync) {
             ack.encode(_outputStream, _protocolVersion);
         }
     }

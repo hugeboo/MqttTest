@@ -1,5 +1,6 @@
 package ru.dotkit.mqtt.broker;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,7 +28,7 @@ import ru.dotkit.mqtt.utils.messages.UnsubscribeMessage;
  * Created by ssv on 29.11.2017.
  */
 
-final class ClientSession {
+final class ClientSession implements Closeable, Runnable {
 
     private final ServerContext _ctx;
     private final Socket _socket;
@@ -35,9 +36,9 @@ final class ClientSession {
     private final Object _outputSocketSync = new Object();
     private final Object _subscriptionSync = new Object();
 
-    private InputStream _inputStream;
-    private OutputStream _outputStream;
-    private Thread _inputThread;
+    private final InputStream _inputStream;
+    private final OutputStream _outputStream;
+    private final Thread _inputThread;
 
     private boolean _isConnected;
     private boolean _isClosed;
@@ -79,38 +80,38 @@ final class ClientSession {
         return _password;
     }
 
-    public ClientSession(ServerContext ctx, Socket socket) throws IOException {
+    private ClientSession(ServerContext ctx, Socket socket) throws IOException {
         _ctx = ctx;
         _socket = socket;
-
         _protocolVersion = CodecUtils.VERSION_3_1_1;
-
         //_socket.setSoTimeout();
         _inputStream = _socket.getInputStream();
         _outputStream = _socket.getOutputStream();
-
-        Runnable proc = new Runnable() {
-            @Override
-            public void run() {
-                inputThreadProc();
-            }
-        };
-        _inputThread = new Thread(proc);
+        _inputThread = new Thread(this);//proc);
         _inputThread.start();
     }
 
-    public void SendMessageToClient(AbstractMessage m) throws Exception {
+    public static ClientSession StartNew(ServerContext ctx, Socket socket) throws IOException {
+        return new ClientSession(ctx,socket);
+    }
+
+    public void sendMessageToClient(AbstractMessage m) throws Exception {
         synchronized (_outputSocketSync) {
             m.encode(_outputStream, _protocolVersion);
         }
     }
 
-    public byte CheckSubscribe(String topicFilter) {// class TopicFilter!!!
-        //...
-        return AbstractMessage.QOS_RESERVED;//failure
+    public byte checkSubscribtion(String topic) {
+        for (ClientSubscription cs: _mapSubscriptions.values()) {
+            if (cs.getTopicFilter().match(topic)){
+                return cs.getQos();
+            }
+        }
+        return AbstractMessage.QOS_RESERVED;
     }
 
-    public void Close() {
+    @Override
+    public void close() {
         if (!_isClosed) {
             _isClosed = true;
             try {
@@ -133,10 +134,11 @@ final class ClientSession {
     }
 
     protected void finalize() {
-        Close();
+        close();
     }
 
-    private void inputThreadProc() {
+    @Override
+    public void run() {
         try {
             boolean disconnect = false;
             while (!disconnect) {
@@ -175,6 +177,7 @@ final class ClientSession {
         } catch (Exception ex) {
             //...
         } finally {
+            _ctx.unregisterClientSession(this);
             //...
         }
     }
@@ -193,7 +196,7 @@ final class ClientSession {
 
         ConnAckMessage ack = null;
 
-        int res = _ctx.RegisterClientSession(this);
+        int res = _ctx.registerClientSession(this);
 
         if (res == ServerContext.OK) {
             ack = new ConnAckMessage();
@@ -218,7 +221,6 @@ final class ClientSession {
 
     private void processDisconnect(DisconnectMessage m) {
         _isConnected = false;
-        _ctx.UnregisterClientSession(this);
     }
 
     private void processPingReq(PingReqMessage m) throws Exception {
@@ -230,7 +232,7 @@ final class ClientSession {
     }
 
     private void processPublish(PublishMessage m) {
-        _ctx.ProcessNewPublishMessage(this, m);
+        _ctx.processNewPublishMessage(this, m);
     }
 
     private void processSubscribe(SubscribeMessage m) throws Exception {
@@ -254,7 +256,7 @@ final class ClientSession {
             }
         }
 
-        _ctx.ProcessNewSubscriptions(this, subs);
+        _ctx.processNewSubscriptions(this, subs);
 
         synchronized (_outputSocketSync) {
             ack.encode(_outputStream, _protocolVersion);

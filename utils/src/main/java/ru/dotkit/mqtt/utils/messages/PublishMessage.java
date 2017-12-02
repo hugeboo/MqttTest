@@ -94,8 +94,8 @@ public class PublishMessage extends AbstractMessage {//} MessageIDMessage {
 
         if (m_qos == QOS_1 || m_qos == QOS_2) {
             m_messageID = CodecUtils.readUShort(stream);
+            varHeaderLength += 2;
         }
-        varHeaderLength += 2;
 
         //read the payload
         int payloadSize = m_remainingLength - varHeaderLength;

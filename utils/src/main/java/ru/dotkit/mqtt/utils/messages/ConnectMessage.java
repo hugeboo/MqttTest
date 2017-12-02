@@ -221,7 +221,7 @@ public class ConnectMessage extends AbstractMessage {
 
         //Decode the ClientID
         String clientID = CodecUtils.readString(stream).s;
-        if (clientID == null) {
+        if (clientID == null || clientID == "") {
             throw new Exception();
         }
         m_clientID = clientID;

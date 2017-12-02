@@ -1,9 +1,13 @@
 package ru.dotkit.mqtt.broker;
 
+import android.widget.Toast;
+
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 
 /**
  * Created by Sergey on 02.12.2017.
@@ -44,12 +48,13 @@ public final class Server implements Closeable, Runnable {
         try {
             _serverSocket = new ServerSocket(_options.getPort());
             //System.out.println("Start server on port: " + SERVER_PORT);
+            InetAddress iad = _serverSocket.getInetAddress();
+            SocketAddress sa = _serverSocket.getLocalSocketAddress();
 
             while (true) {
                 try {
-
                     Socket socket = _serverSocket.accept();
-                    //System.out.println("Get client connection");
+                    //System.out.println("Get client connection")
                     ClientSession.StartNew(_ctx, socket);
                 } catch (Exception e) {
                     System.out.println("Connection error: " + e.getMessage());

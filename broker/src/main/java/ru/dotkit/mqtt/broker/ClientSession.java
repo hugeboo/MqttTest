@@ -1,5 +1,7 @@
 package ru.dotkit.mqtt.broker;
 
+import android.util.Log;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -84,7 +86,7 @@ final class ClientSession implements Closeable, Runnable {
         _ctx = ctx;
         _socket = socket;
         _protocolVersion = CodecUtils.VERSION_3_1_1;
-        //_socket.setSoTimeout();
+        _socket.setSoTimeout(0);
         _inputStream = _socket.getInputStream();
         _outputStream = _socket.getOutputStream();
         _inputThread = new Thread(this);//proc);
@@ -142,12 +144,17 @@ final class ClientSession implements Closeable, Runnable {
         try {
             boolean disconnect = false;
             while (!disconnect) {
+                //while (_inputStream.available()<1){}
+                Log.i("MQTT","read");
                 byte fixedHeader = (byte) _inputStream.read();
                 AbstractMessage m = MessageFactory.Create(fixedHeader, _protocolVersion);
                 if (m != null) {
+                    m.decode(_inputStream, fixedHeader, _protocolVersion);
                     switch (m.getMessageType()) {
                         case AbstractMessage.CONNECT:
+                            Log.i("MQTT", "Connect >");
                             processConnect((ConnectMessage) m);
+                            Log.i("MQTT", "Connect <");
                             break;
                         case AbstractMessage.DISCONNECT:
                             processDisconnect((DisconnectMessage) m);
@@ -166,17 +173,24 @@ final class ClientSession implements Closeable, Runnable {
                             processUnsubscribe((UnsubscribeMessage) m);
                             break;
                     }
+                }else {
+                    Log.d("MQTT","FF");
                 }
             }
         } catch (SocketTimeoutException ex) {
             //...
+            Log.e("MQTT", ex.getMessage());
         } catch (IOException ex) {
             //...
+            Log.e("MQTT", ex.getMessage());
         } catch (RuntimeException ex) {
             //...
+            Log.e("MQTT", ex.getMessage());
         } catch (Exception ex) {
             //...
+            Log.e("MQTT", ex.getMessage());
         } finally {
+            Log.i("MQTT", "unregisterClientSession");
             _ctx.unregisterClientSession(this);
             //...
         }
@@ -184,6 +198,7 @@ final class ClientSession implements Closeable, Runnable {
 
     private void processConnect(ConnectMessage m) throws Exception {
         _protocolVersion = m.getProtocolVersion();
+        _clientId = m.getClientID();
         _cleanSession = m.isCleanSession();
         _username = m.getUsername();
         _password = m.getPassword();
@@ -200,7 +215,7 @@ final class ClientSession implements Closeable, Runnable {
 
         if (res == ServerContext.OK) {
             ack = new ConnAckMessage();
-            ack.setReturnCode(ConnAckMessage.CONNECT);
+            ack.setReturnCode(ConnAckMessage.CONNECTION_ACCEPTED);
         } else if (res == ServerContext.SESSION_ALREADY_EXISTS) {
             ack = new ConnAckMessage();
             ack.setReturnCode(ConnAckMessage.IDENTIFIER_REJECTED);
@@ -209,6 +224,7 @@ final class ClientSession implements Closeable, Runnable {
         if (ack != null) {
             synchronized (_outputSocketSync) {
                 ack.encode(_outputStream, _protocolVersion);
+                _outputStream.flush();
             }
         }
 

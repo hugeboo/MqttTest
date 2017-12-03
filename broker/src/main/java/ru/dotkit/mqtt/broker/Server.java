@@ -1,5 +1,6 @@
 package ru.dotkit.mqtt.broker;
 
+import android.util.Log;
 import android.widget.Toast;
 
 import java.io.Closeable;
@@ -15,25 +16,40 @@ import java.net.SocketAddress;
 
 public final class Server implements Closeable, Runnable {
 
+    private static final String TAG = "MQTT Server";
     private final ServerOptions _options;
     private ServerSocket _serverSocket;
     private Thread _serverThread;
     private ServerContext _ctx;
 
-    public Server(ServerOptions options){
+    public Server(ServerOptions options) {
         _options = options;
+        Log.d(TAG, "Created");
     }
 
     @Override
     public void close() {
-        if (_serverThread != null) _serverThread.interrupt();
+        Log.d(TAG, "Close");
+        if (_serverThread != null) {
+            _serverThread.interrupt();
+        }
+        if (_serverSocket != null) {
+            try {
+                _serverSocket.close();
+                _serverSocket = null;
+            } catch (IOException ex) {
+                Log.e(TAG, "Close server socket exception", ex);
+            }
+        }
     }
 
     protected void finalize() {
+        Log.d(TAG, "finalize");
         close();
     }
 
     public void start() {
+        Log.d(TAG, "Start");
         _ctx = new ServerContext();
         _serverThread = new Thread(this);
         _serverThread.start();
@@ -44,34 +60,27 @@ public final class Server implements Closeable, Runnable {
      */
     @Override
     public void run() {
-
         try {
             _serverSocket = new ServerSocket(_options.getPort());
-            //System.out.println("Start server on port: " + SERVER_PORT);
-            InetAddress iad = _serverSocket.getInetAddress();
-            SocketAddress sa = _serverSocket.getLocalSocketAddress();
+            Log.d(TAG, "Run on port " + _options.getPort());
 
-            while (true) {
+            while (!_serverThread.isInterrupted()) {
                 try {
                     Socket socket = _serverSocket.accept();
-                    //System.out.println("Get client connection")
-                    ClientSession.StartNew(_ctx, socket);
-                } catch (Exception e) {
-                    System.out.println("Connection error: " + e.getMessage());
+                    Log.d(TAG, "New connection from " +
+                            socket.getInetAddress().getHostAddress() + ":" + socket.getPort());
+                    ClientSession.StartNew(_ctx, socket, _options);
+                } catch (Exception ex) {
+                    Log.e(TAG, "Connection exception", ex);
                 }
             }
 
-        } catch (IOException e) {
-            //System.out.println("Cant start server on port " + SERVER_PORT + ":" + e.getMessage());
+            Log.d(TAG, "Thread done (isInterrupted=" + _serverThread.isInterrupted() + ")");
+
+        } catch (Exception ex) {
+            Log.e(TAG, "Thread exception", ex);
         } finally {
-            /* Закрываем соединение */
-            if (_serverSocket != null) {
-                try {
-                    _serverSocket.close();
-                    _serverSocket = null;
-                } catch (IOException e) {
-                }
-            }
+            close();
         }
     }
 }

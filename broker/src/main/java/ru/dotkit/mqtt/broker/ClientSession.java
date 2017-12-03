@@ -32,9 +32,12 @@ import ru.dotkit.mqtt.utils.messages.UnsubscribeMessage;
 
 final class ClientSession implements Closeable, Runnable {
 
+    private static final String TAG = "MQTT Session";
+
     private final ServerContext _ctx;
     private final Socket _socket;
-    private final HashMap<String, ClientSubscription> _mapSubscriptions = new HashMap<>();// class TopicFilter!!!
+    private final ServerOptions _options;
+    private final HashMap<String, ClientSubscription> _mapSubscriptions = new HashMap<>();
     private final Object _outputSocketSync = new Object();
     private final Object _subscriptionSync = new Object();
 
@@ -43,7 +46,6 @@ final class ClientSession implements Closeable, Runnable {
     private final Thread _inputThread;
 
     private boolean _isConnected;
-    private boolean _isClosed;
 
     private String _clientId;
     private byte _protocolVersion;
@@ -82,30 +84,43 @@ final class ClientSession implements Closeable, Runnable {
         return _password;
     }
 
-    private ClientSession(ServerContext ctx, Socket socket) throws IOException {
+    public String getSessionName() {
+        return _socket.getInetAddress() + ":" + _socket.getPort() +
+                " <" + getClientId() + ">";
+    }
+
+    private ClientSession(ServerContext ctx, Socket socket, ServerOptions options)
+            throws IOException {
+
         _ctx = ctx;
         _socket = socket;
+        _options = options;
         _protocolVersion = CodecUtils.VERSION_3_1_1;
-        _socket.setSoTimeout(0);
+        _socket.setSoTimeout(_options.getConnectionMessageTimeoutSec() * 1000);
         _inputStream = _socket.getInputStream();
         _outputStream = _socket.getOutputStream();
         _inputThread = new Thread(this);//proc);
         _inputThread.start();
     }
 
-    public static ClientSession StartNew(ServerContext ctx, Socket socket) throws IOException {
-        return new ClientSession(ctx,socket);
+    public static ClientSession StartNew(ServerContext ctx, Socket socket, ServerOptions options)
+            throws IOException {
+
+        Log.d(TAG, "Start");
+        return new ClientSession(ctx, socket, options);
     }
 
-    public void sendMessageToClient(AbstractMessage m) throws Exception {
+    public void sendMessage(AbstractMessage m) throws Exception {
+        Log.d(TAG, getSessionName() + " Send message (type=" +m.getMessageType() + ")");
         synchronized (_outputSocketSync) {
             m.encode(_outputStream, _protocolVersion);
+            _outputStream.flush();
         }
     }
 
     public byte checkSubscribtion(String topic) {
-        for (ClientSubscription cs: _mapSubscriptions.values()) {
-            if (cs.getTopicFilter().match(topic)){
+        for (ClientSubscription cs : _mapSubscriptions.values()) {
+            if (cs.getTopicFilter().match(topic)) {
                 return cs.getQos();
             }
         }
@@ -114,28 +129,26 @@ final class ClientSession implements Closeable, Runnable {
 
     @Override
     public void close() {
-        if (!_isClosed) {
-            _isClosed = true;
-            try {
-                if (_inputThread != null) _inputThread.interrupt();
-            } catch (Exception ex) {
-            }
-            try {
-                if (_inputStream != null) _inputStream.close();
-            } catch (Exception ex) {
-            }
-            try {
-                if (_outputStream != null) _outputStream.close();
-            } catch (Exception ex) {
-            }
-            try {
-                if (_socket != null) _socket.close();
-            } catch (Exception ex) {
-            }
+        Log.d(TAG, "Close");
+        if (_inputThread != null) {
+            _inputThread.interrupt();
+        }
+        try {
+            if (_inputStream != null) _inputStream.close();
+        } catch (Exception ex) {
+        }
+        try {
+            if (_outputStream != null) _outputStream.close();
+        } catch (Exception ex) {
+        }
+        try {
+            if (_socket != null) _socket.close();
+        } catch (Exception ex) {
         }
     }
 
     protected void finalize() {
+        Log.d(TAG, "finalize");
         close();
     }
 
@@ -143,18 +156,23 @@ final class ClientSession implements Closeable, Runnable {
     public void run() {
         try {
             boolean disconnect = false;
-            while (!disconnect) {
-                //while (_inputStream.available()<1){}
-                Log.i("MQTT","read");
+            while (!disconnect && !_inputThread.isInterrupted()) {
+
+                Log.d(TAG, getSessionName() + " Wait message");
                 byte fixedHeader = (byte) _inputStream.read();
+                if (_inputThread.isInterrupted()) break;
+
                 AbstractMessage m = MessageFactory.Create(fixedHeader, _protocolVersion);
                 if (m != null) {
+                    Log.d(TAG, getSessionName() +
+                            " Receive message (type=" + m.getMessageType() + ")");
                     m.decode(_inputStream, fixedHeader, _protocolVersion);
+
                     switch (m.getMessageType()) {
                         case AbstractMessage.CONNECT:
-                            Log.i("MQTT", "Connect >");
                             processConnect((ConnectMessage) m);
-                            Log.i("MQTT", "Connect <");
+                            _socket.setSoTimeout(_keepAlive > 0 ?
+                                    _keepAlive * 1000 : _options.getConnectionMessageTimeoutSec());
                             break;
                         case AbstractMessage.DISCONNECT:
                             processDisconnect((DisconnectMessage) m);
@@ -173,26 +191,24 @@ final class ClientSession implements Closeable, Runnable {
                             processUnsubscribe((UnsubscribeMessage) m);
                             break;
                     }
-                }else {
-                    Log.d("MQTT","FF");
+                } else {
+                    throw new RuntimeException(getSessionName() +
+                            " Receive BAD message (fixedHeader=" + fixedHeader + ")");
                 }
             }
         } catch (SocketTimeoutException ex) {
-            //...
-            Log.e("MQTT", ex.getMessage());
+            Log.e(TAG, getSessionName() + " ClientSession timeout", ex);
         } catch (IOException ex) {
-            //...
-            Log.e("MQTT", ex.getMessage());
+            Log.e(TAG, getSessionName() + " ClientSession exception", ex);
         } catch (RuntimeException ex) {
-            //...
-            Log.e("MQTT", ex.getMessage());
+            Log.e(TAG, getSessionName() + " ClientSession exception", ex);
         } catch (Exception ex) {
-            //...
-            Log.e("MQTT", ex.getMessage());
+            Log.e(TAG, getSessionName() + " ClientSession exception", ex);
         } finally {
-            Log.i("MQTT", "unregisterClientSession");
+            Log.d(TAG, getSessionName() + " ClientSession finally");
             _ctx.unregisterClientSession(this);
-            //...
+            close();
+            Log.d(TAG, getSessionName() + " ClientSession thread done");
         }
     }
 
@@ -222,14 +238,12 @@ final class ClientSession implements Closeable, Runnable {
         }
 
         if (ack != null) {
-            synchronized (_outputSocketSync) {
-                ack.encode(_outputStream, _protocolVersion);
-                _outputStream.flush();
-            }
+            sendMessage(ack);
         }
 
         if (res != ServerContext.OK) {
-            throw new RuntimeException("ClientConnection rejected. Code: " + res);
+            throw new RuntimeException(getSessionName() +
+                    " ClientConnection rejected. Code: " + res);
         }
 
         _isConnected = true;
@@ -241,10 +255,7 @@ final class ClientSession implements Closeable, Runnable {
 
     private void processPingReq(PingReqMessage m) throws Exception {
         PingRespMessage ack = new PingRespMessage();
-
-        synchronized (_outputSocketSync) {
-            ack.encode(_outputStream, _protocolVersion);
-        }
+        sendMessage(ack);
     }
 
     private void processPublish(PublishMessage m) {
@@ -266,6 +277,7 @@ final class ClientSession implements Closeable, Runnable {
                     cs.setQos(AbstractMessage.QOS_0);//c.getQos()); поддерживаем только QOS_0 !!!
                 } else {
                     cs = new ClientSubscription(tf, c.getQos());
+                    _mapSubscriptions.put(tfs, cs);
                 }
                 subs.add(cs);
                 ack.addType(AbstractMessage.QOS_0); // поддерживаем только QOS_0 !!!
@@ -274,9 +286,7 @@ final class ClientSession implements Closeable, Runnable {
 
         _ctx.processNewSubscriptions(this, subs);
 
-        synchronized (_outputSocketSync) {
-            ack.encode(_outputStream, _protocolVersion);
-        }
+        sendMessage(ack);
     }
 
     private void processUnsubscribe(UnsubscribeMessage m) throws Exception {
@@ -289,8 +299,6 @@ final class ClientSession implements Closeable, Runnable {
 
         UnsubscribeMessage ack = new UnsubscribeMessage();
         ack.setMessageID(m.getMessageID());
-        synchronized (_outputSocketSync) {
-            ack.encode(_outputStream, _protocolVersion);
-        }
+        sendMessage(ack);
     }
 }

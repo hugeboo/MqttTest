@@ -1,5 +1,7 @@
 package ru.dotkit.mqtt.broker;
 
+import android.util.Log;
+
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,6 +16,7 @@ import ru.dotkit.mqtt.utils.messages.PublishMessage;
 
 final class ServerContext implements Closeable {
 
+    private static final String TAG = "MQTT Context";
     public static final int OK = 0;
     public static final int SESSION_ALREADY_EXISTS = 1;
 
@@ -24,11 +27,13 @@ final class ServerContext implements Closeable {
     public ServerContext() {
         _mapClientSessions = new HashMap<>();
         _mapRetainMessages = new HashMap<>();
+        Log.d(TAG, "Created");
     }
 
-    public void close(){
-        synchronized (_collectionSync){
-            for (ClientSession cs: _mapClientSessions.values()) {
+    public void close() {
+        Log.d(TAG, "Close");
+        synchronized (_collectionSync) {
+            for (ClientSession cs : _mapClientSessions.values()) {
                 cs.close();
             }
         }
@@ -37,14 +42,18 @@ final class ServerContext implements Closeable {
     public int registerClientSession(ClientSession session) {
         synchronized (_collectionSync) {
             if (_mapClientSessions.containsKey(session.getClientId())) {
+                Log.w(TAG, "Register session: '" +
+                        session.getClientId() + "' - ERROR - SESSION_ALREADY_EXISTS");
                 return SESSION_ALREADY_EXISTS;
             }
             _mapClientSessions.put(session.getClientId(), session);
         }
+        Log.d(TAG, "Register session: '" + session.getClientId() + "' - OK");
         return OK;
     }
 
     public void unregisterClientSession(ClientSession session) {
+        Log.d(TAG, "Unregister session: '" + session.getClientId() + "'");
         synchronized (_collectionSync) {
             if (_mapClientSessions.containsKey(session.getClientId())) {
                 _mapClientSessions.remove(session.getClientId());
@@ -69,9 +78,11 @@ final class ServerContext implements Closeable {
         }
         for (ClientSession s : destSessions) {
             try {
-                s.sendMessageToClient(m);
+                Log.d(TAG, "Publish message (topic='" +
+                        m.getTopicName() + "') to client '" + s.getClientId() + "'");
+                s.sendMessage(m);
             } catch (Exception ex) {
-                //...
+                Log.e(TAG, "Send message exception", ex);
             }
         }
     }
@@ -90,9 +101,11 @@ final class ServerContext implements Closeable {
         }
         for (PublishMessage m : retainMessages) {
             try {
-                session.sendMessageToClient(m);
+                Log.d(TAG, "Retain message (topic='" +
+                        m.getTopicName() + "') to client '" + session.getClientId() + "'");
+                session.sendMessage(m);
             } catch (Exception ex) {
-                //...
+                Log.e(TAG, "Send retain message exception", ex);
             }
         }
     }

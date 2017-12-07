@@ -2,21 +2,21 @@ package ru.dotkit.mqtt.utils;
 
 import android.support.annotation.Nullable;
 
-import ru.dotkit.mqtt.utils.messages.AbstractMessage;
-import ru.dotkit.mqtt.utils.messages.ConnAckMessage;
-import ru.dotkit.mqtt.utils.messages.ConnectMessage;
-import ru.dotkit.mqtt.utils.messages.DisconnectMessage;
-import ru.dotkit.mqtt.utils.messages.PingReqMessage;
-import ru.dotkit.mqtt.utils.messages.PingRespMessage;
-import ru.dotkit.mqtt.utils.messages.PubAckMessage;
-import ru.dotkit.mqtt.utils.messages.PubCompMessage;
-import ru.dotkit.mqtt.utils.messages.PubRecMessage;
-import ru.dotkit.mqtt.utils.messages.PubRelMessage;
-import ru.dotkit.mqtt.utils.messages.PublishMessage;
-import ru.dotkit.mqtt.utils.messages.SubAckMessage;
-import ru.dotkit.mqtt.utils.messages.SubscribeMessage;
-import ru.dotkit.mqtt.utils.messages.UnsubAckMessage;
-import ru.dotkit.mqtt.utils.messages.UnsubscribeMessage;
+import ru.dotkit.mqtt.utils.Messages.AbstractMessage;
+import ru.dotkit.mqtt.utils.Messages.ConnAckMessage;
+import ru.dotkit.mqtt.utils.Messages.ConnectMessage;
+import ru.dotkit.mqtt.utils.Messages.DisconnectMessage;
+import ru.dotkit.mqtt.utils.Messages.PingReqMessage;
+import ru.dotkit.mqtt.utils.Messages.PingRespMessage;
+import ru.dotkit.mqtt.utils.Messages.PubAckMessage;
+import ru.dotkit.mqtt.utils.Messages.PubCompMessage;
+import ru.dotkit.mqtt.utils.Messages.PubRecMessage;
+import ru.dotkit.mqtt.utils.Messages.PubRelMessage;
+import ru.dotkit.mqtt.utils.Messages.PublishMessage;
+import ru.dotkit.mqtt.utils.Messages.SubAckMessage;
+import ru.dotkit.mqtt.utils.Messages.SubscribeMessage;
+import ru.dotkit.mqtt.utils.Messages.UnsubAckMessage;
+import ru.dotkit.mqtt.utils.Messages.UnsubscribeMessage;
 
 /**
  * Created by Sergey on 26.11.2017.

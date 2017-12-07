@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import ru.dotkit.mqtt.utils.messages.AbstractMessage;
-import ru.dotkit.mqtt.utils.messages.PublishMessage;
+import ru.dotkit.mqtt.utils.Messages.AbstractMessage;
+import ru.dotkit.mqtt.utils.Messages.PublishMessage;
 
 /**
  * Created by ssv on 29.11.2017.

@@ -15,16 +15,16 @@ import java.util.List;
 import ru.dotkit.mqtt.utils.CodecUtils;
 import ru.dotkit.mqtt.utils.MessageFactory;
 import ru.dotkit.mqtt.utils.TopicFilter;
-import ru.dotkit.mqtt.utils.messages.AbstractMessage;
-import ru.dotkit.mqtt.utils.messages.ConnAckMessage;
-import ru.dotkit.mqtt.utils.messages.ConnectMessage;
-import ru.dotkit.mqtt.utils.messages.DisconnectMessage;
-import ru.dotkit.mqtt.utils.messages.PingReqMessage;
-import ru.dotkit.mqtt.utils.messages.PingRespMessage;
-import ru.dotkit.mqtt.utils.messages.PublishMessage;
-import ru.dotkit.mqtt.utils.messages.SubAckMessage;
-import ru.dotkit.mqtt.utils.messages.SubscribeMessage;
-import ru.dotkit.mqtt.utils.messages.UnsubscribeMessage;
+import ru.dotkit.mqtt.utils.Messages.AbstractMessage;
+import ru.dotkit.mqtt.utils.Messages.ConnAckMessage;
+import ru.dotkit.mqtt.utils.Messages.ConnectMessage;
+import ru.dotkit.mqtt.utils.Messages.DisconnectMessage;
+import ru.dotkit.mqtt.utils.Messages.PingReqMessage;
+import ru.dotkit.mqtt.utils.Messages.PingRespMessage;
+import ru.dotkit.mqtt.utils.Messages.PublishMessage;
+import ru.dotkit.mqtt.utils.Messages.SubAckMessage;
+import ru.dotkit.mqtt.utils.Messages.SubscribeMessage;
+import ru.dotkit.mqtt.utils.Messages.UnsubscribeMessage;
 
 /**
  * Created by ssv on 29.11.2017.

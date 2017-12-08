@@ -8,6 +8,7 @@ import java.io.InputStream;
 
 import ru.dotkit.mqtt.utils.CodecUtils;
 import ru.dotkit.mqtt.utils.MessageFactory;
+import ru.dotkit.mqtt.utils.StaticValues;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -21,7 +22,7 @@ public class ConnAckMessage311UnitTest {
 
     @Test
     public void createAndDecodeEncode_isCorrect() throws Exception {
-        byte p = CodecUtils.VERSION_3_1_1;
+        byte p = StaticValues.VERSION_3_1_1;
 
         byte fh = AbstractMessage.CONNACK << 4;
         byte[] bytes = new byte[]{fh, 0x02, 0x01, ConnAckMessage.BAD_USERNAME_OR_PASSWORD};

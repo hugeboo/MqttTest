@@ -9,14 +9,14 @@ import java.util.concurrent.TimeoutException;
  * Created by ssv on 07.12.2017.
  */
 
-public class BaseDataStream implements IDataStream {
+public class DataStream implements IDataStream {
 
     protected final InputStream _inputStream;
     protected final OutputStream _outputStream;
     private long _inputPosition;
     private long _outputPosition;
 
-    public BaseDataStream(InputStream inputStream, OutputStream outputStream) throws IOException {
+    public DataStream(InputStream inputStream, OutputStream outputStream) throws IOException {
         _inputStream = inputStream;
         _outputStream = outputStream;
     }

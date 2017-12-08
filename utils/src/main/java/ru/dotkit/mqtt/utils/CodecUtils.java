@@ -14,8 +14,8 @@ import java.nio.ByteBuffer;
 
 public final class CodecUtils {
 
-    public static final byte VERSION_3_1 = 3;
-    public static final byte VERSION_3_1_1 = 4;
+    //public static final byte VERSION_3_1 = 3;
+    //public static final byte VERSION_3_1_1 = 4;
 
     public static final int MAX_LENGTH_LIMIT = 268435455;
 

@@ -14,6 +14,7 @@ import java.util.List;
 
 import ru.dotkit.mqtt.utils.CodecUtils;
 import ru.dotkit.mqtt.utils.MessageFactory;
+import ru.dotkit.mqtt.utils.StaticValues;
 import ru.dotkit.mqtt.utils.TopicFilter;
 import ru.dotkit.mqtt.utils.Messages.AbstractMessage;
 import ru.dotkit.mqtt.utils.Messages.ConnAckMessage;
@@ -95,7 +96,7 @@ final class ClientSession implements Closeable, Runnable {
         _ctx = ctx;
         _socket = socket;
         _options = options;
-        _protocolVersion = CodecUtils.VERSION_3_1_1;
+        _protocolVersion = StaticValues.VERSION_3_1_1;
         _socket.setSoTimeout(_options.getConnectionMessageTimeoutSec() * 1000);
         _inputStream = _socket.getInputStream();
         _outputStream = _socket.getOutputStream();

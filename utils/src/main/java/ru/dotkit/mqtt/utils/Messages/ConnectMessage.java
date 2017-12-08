@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import ru.dotkit.mqtt.utils.CodecUtils;
+import ru.dotkit.mqtt.utils.StaticValues;
 
 /**
  * The attributes Qos, Dup and Retain aren't used for Connect message
@@ -169,12 +170,12 @@ public class ConnectMessage extends AbstractMessage {
         m_protocolName = CodecUtils.readString(stream).s;
         m_protocolVersion = (byte) stream.read();
 
-        if (!(("MQIsdp".equals(m_protocolName) && m_protocolVersion == CodecUtils.VERSION_3_1) ||
-                ("MQTT".equals(m_protocolName) && m_protocolVersion == CodecUtils.VERSION_3_1_1))) {
+        if (!(("MQIsdp".equals(m_protocolName) && m_protocolVersion == StaticValues.VERSION_3_1) ||
+                ("MQTT".equals(m_protocolName) && m_protocolVersion == StaticValues.VERSION_3_1_1))) {
             throw new Exception();
         }
 
-        if (m_protocolVersion == CodecUtils.VERSION_3_1_1) {
+        if (m_protocolVersion == StaticValues.VERSION_3_1_1) {
             if (isDupFlag() || isRetainFlag() || getQos() != QOS_0) {
                 throw new Exception();
             }
@@ -182,7 +183,7 @@ public class ConnectMessage extends AbstractMessage {
 
         //Connection flag
         int connFlags = stream.read();
-        if (m_protocolVersion == CodecUtils.VERSION_3_1_1) {
+        if (m_protocolVersion == StaticValues.VERSION_3_1_1) {
             if ((connFlags & 0x01) != 0) { //bit(0) of connection flags is != 0
                 throw new Exception("Received a CONNECT with connectionFlags[0(bit)] != 0");
             }
@@ -213,8 +214,8 @@ public class ConnectMessage extends AbstractMessage {
         //Keep Alive timer 2 bytes
         m_keepAlive = CodecUtils.readUShort(stream);
 
-        if ((m_remainingLength == 12 && m_protocolVersion == CodecUtils.VERSION_3_1) ||
-                (m_remainingLength == 10 && m_protocolVersion == CodecUtils.VERSION_3_1_1)) {
+        if ((m_remainingLength == 12 && m_protocolVersion == StaticValues.VERSION_3_1) ||
+                (m_remainingLength == 10 && m_protocolVersion == StaticValues.VERSION_3_1_1)) {
             return;
         }
 

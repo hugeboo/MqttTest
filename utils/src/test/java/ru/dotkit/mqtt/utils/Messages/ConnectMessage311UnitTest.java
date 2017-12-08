@@ -7,6 +7,7 @@ import java.io.InputStream;
 
 import ru.dotkit.mqtt.utils.CodecUtils;
 import ru.dotkit.mqtt.utils.MessageFactory;
+import ru.dotkit.mqtt.utils.StaticValues;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -20,7 +21,7 @@ public class ConnectMessage311UnitTest {
 
     @Test
     public void createAndDecodeEncode_isCorrect() throws Exception {
-        byte p = CodecUtils.VERSION_3_1_1;
+        byte p = StaticValues.VERSION_3_1_1;
 
         byte fh = AbstractMessage.CONNECT << 4;
         byte[] bytes = new byte[]{fh, 0x1A,

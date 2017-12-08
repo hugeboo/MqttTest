@@ -22,6 +22,7 @@ import java.io.OutputStream;
 
 import ru.dotkit.mqtt.utils.CodecUtils;
 import ru.dotkit.mqtt.utils.ReadedString;
+import ru.dotkit.mqtt.utils.StaticValues;
 
 /**
  *
@@ -66,7 +67,7 @@ public class PublishMessage extends AbstractMessage {//} MessageIDMessage {
     public void decode(InputStream stream, byte fixHeader, byte protocolVersion) throws Exception {
         super.decode(stream, fixHeader, protocolVersion);
 
-        if (protocolVersion == CodecUtils.VERSION_3_1_1) {
+        if (protocolVersion == StaticValues.VERSION_3_1_1) {
             if (m_qos == QOS_0 && m_dupFlag) {
                 //bad protocol, if QoS=0 => DUP = 0
                 throw new Exception("Received a PUBLISH with QoS=0 & DUP = 1, MQTT 3.1.1 violation");

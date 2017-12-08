@@ -8,7 +8,7 @@ import java.net.SocketException;
  * Created by ssv on 07.12.2017.
  */
 
-public class TcpIpDataStreamConnector implements IDataStreamConnector {
+public class TcpDataStreamConnector implements IDataStreamConnector {
 
     private Socket _socket;
     private IDataStream _stream;
@@ -31,11 +31,11 @@ public class TcpIpDataStreamConnector implements IDataStreamConnector {
         }
 
         _socket = new Socket(splits[0], port);
-        _stream = CreateDataStream(_socket);
+        _stream = createDataStream(_socket);
     }
 
-    protected IDataStream CreateDataStream(Socket socket) throws IOException {
-        return new TcpIpDataStream(socket);
+    protected IDataStream createDataStream(Socket socket) throws IOException {
+        return new DataStream(socket.getInputStream(), socket.getOutputStream());
     }
 
     @Override

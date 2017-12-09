@@ -6,7 +6,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
-import ru.dotkit.mqtt.utils.CodecUtils;
+import ru.dotkit.mqtt.utils.DataStream.MqttDataStream;
 import ru.dotkit.mqtt.utils.MessageFactory;
 import ru.dotkit.mqtt.utils.StaticValues;
 
@@ -35,14 +35,14 @@ public class SubAckMessage311UnitTest {
         assertEquals(AbstractMessage.SUBACK, am.getMessageType());
 
         SubAckMessage m = (SubAckMessage) am;
-        m.decode(in, fh, p);
+        m.read(new MqttDataStream(in,null), fh, p);
         assertEquals(0x030F, m.getMessageID());
         assertArrayEquals(
                 new int[]{0x00, 0x01, 0x02},
                 new int[]{m.types().get(0), m.types().get(1), m.types().get(2)});
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        m.encode(out, p);
+        m.write(new MqttDataStream(null,out), p);
         byte[] bb = out.toByteArray();
         assertArrayEquals(bytes, bb);
     }

@@ -6,7 +6,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
-import ru.dotkit.mqtt.utils.CodecUtils;
+import ru.dotkit.mqtt.utils.DataStream.MqttDataStream;
 import ru.dotkit.mqtt.utils.MessageFactory;
 import ru.dotkit.mqtt.utils.StaticValues;
 
@@ -32,11 +32,11 @@ public class PingRecMessage311UnitTest {
         assertEquals(AbstractMessage.PINGREQ, am.getMessageType());
 
         PingReqMessage m = (PingReqMessage) am;
-        m.decode(in, fh, p);
+        m.read(new MqttDataStream(in,null), fh, p);
         assertEquals(0, m.getRemainingLength());
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        m.encode(out, p);
+        m.write(new MqttDataStream(null,out), p);
         byte[] bb = out.toByteArray();
         assertArrayEquals(bytes, bb);
     }

@@ -16,10 +16,12 @@
 //package org.eclipse.moquette.proto.messages;
 package ru.dotkit.mqtt.utils.Messages;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.TimeoutException;
 
-import ru.dotkit.mqtt.utils.CodecUtils;
+import ru.dotkit.mqtt.utils.DataStream.IMqttDataStream;
 
 /**
  * The attributes Qos, Dup and Retain aren't used.
@@ -58,26 +60,27 @@ public class ConnAckMessage extends AbstractMessage {
     }
 
     @Override
-    public void decode(InputStream stream, byte fixHeader, byte protocolVersion) throws Exception {
-        super.decode(stream, fixHeader, protocolVersion);
+    public void read(IMqttDataStream stream, byte fixHeader, byte protocolVersion)
+            throws IOException, TimeoutException {
+        super.read(stream, fixHeader, protocolVersion);
 
-        if (m_remainingLength != 2) throw new Exception();
+        if (m_remainingLength != 2) throw new IOException("RemainingLength must be 2");
 
         int b = stream.read();
-        if ((b & 0xFE) != 0x00) throw new Exception();
+        if ((b & 0xFE) != 0x00) throw new IOException("QoS must be 0");
         m_sessionPresent = (b & 0x01) == 0x01;
 
         b = stream.read();
-        if (b < 0 || b > 5) throw new Exception();
+        if (b < 0 || b > 5) throw new IOException("ReturnCode must be 0...5");
         m_returnCode = (byte) b;
     }
 
     @Override
-    public void encode(OutputStream stream, byte protocolVersion) throws Exception {
-        super.encode(stream, protocolVersion);
+    public void write(IMqttDataStream stream, byte protocolVersion) throws IOException {
+        super.write(stream, protocolVersion);
 
-        CodecUtils.encodeRemainingLength(stream, 2);
-        stream.write(m_sessionPresent ? 0x01 : 0x00);
+        stream.writeRemainingLength(2);
+        stream.write(m_sessionPresent ? (byte) 0x01 : (byte) 0x00);
         stream.write(m_returnCode);
     }
 }

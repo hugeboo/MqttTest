@@ -18,10 +18,13 @@ package ru.dotkit.mqtt.utils.Messages;
 
 import android.support.annotation.CallSuper;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.TimeoutException;
 
-import ru.dotkit.mqtt.utils.CodecUtils;
+import ru.dotkit.mqtt.utils.DataStream.IDataStream;
+import ru.dotkit.mqtt.utils.DataStream.IMqttDataStream;
 
 /**
  * Basic abstract message for all MQTT protocol messages.
@@ -106,24 +109,22 @@ public abstract class AbstractMessage {
     }
 
     @CallSuper
-    public void decode(InputStream stream, byte fixHeader, byte protocolVersion) throws Exception {
+    public void read(IMqttDataStream stream, byte fixHeader, byte protocolVersion)
+            throws IOException, TimeoutException {
         m_dupFlag = (fixHeader & 0x08) == 0x08;
         m_retainFlag = (fixHeader & 0x01) == 0x01;
         m_qos = (byte)((fixHeader & 0x06) >> 1);
-        m_remainingLength = CodecUtils.decodeRemainingLength(stream);
-        if (m_remainingLength == -1) {
-            throw new Exception("Invalid remainingLength");
-        }
+        m_remainingLength = stream.readRemainingLength();
         if (m_qos == QOS_RESERVED) {
-            throw new Exception("Received a PUBLISH with QoS flags setted 10 b11, MQTT 3.1.1 violation");
+            throw new IOException("Received a PUBLISH with QOS_RESERVED, MQTT 3.1.1 violation");
         }
     }
 
     @CallSuper
-    public void encode(OutputStream stream, byte protocolVersion) throws Exception {
+    public void write(IMqttDataStream stream, byte protocolVersion) throws IOException {
         byte flags = encodeFlags(this, protocolVersion);
         int fixHeader = m_messageType << 4 | flags;
-        stream.write(fixHeader);
+        stream.write((byte)fixHeader);
     }
 
     private static byte encodeFlags(AbstractMessage message, byte protocolVersion) {

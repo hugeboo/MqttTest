@@ -11,8 +11,12 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
-import ru.dotkit.mqtt.utils.CodecUtils;
+import ru.dotkit.mqtt.utils.DataStream.IDataStreamConnector;
+import ru.dotkit.mqtt.utils.DataStream.IMqttDataStream;
+import ru.dotkit.mqtt.utils.DataStream.MqttDataStream;
+import ru.dotkit.mqtt.utils.DataStream.MqttTcpDataStreamConnector;
 import ru.dotkit.mqtt.utils.MessageFactory;
 import ru.dotkit.mqtt.utils.StaticValues;
 import ru.dotkit.mqtt.utils.TopicFilter;
@@ -42,8 +46,7 @@ final class ClientSession implements Closeable, Runnable {
     private final Object _outputSocketSync = new Object();
     private final Object _subscriptionSync = new Object();
 
-    private final InputStream _inputStream;
-    private final OutputStream _outputStream;
+    private final IMqttDataStream _stream;
     private final Thread _inputThread;
 
     private boolean _isConnected;
@@ -94,13 +97,12 @@ final class ClientSession implements Closeable, Runnable {
             throws IOException {
 
         _ctx = ctx;
-        _socket = socket;
         _options = options;
         _protocolVersion = StaticValues.VERSION_3_1_1;
+        _socket = socket;
+        _stream = new MqttDataStream(_socket.getInputStream(),_socket.getOutputStream());
         _socket.setSoTimeout(_options.getConnectionMessageTimeoutSec() * 1000);
-        _inputStream = _socket.getInputStream();
-        _outputStream = _socket.getOutputStream();
-        _inputThread = new Thread(this);//proc);
+        _inputThread = new Thread(this);
         _inputThread.start();
     }
 
@@ -111,11 +113,11 @@ final class ClientSession implements Closeable, Runnable {
         return new ClientSession(ctx, socket, options);
     }
 
-    public void sendMessage(AbstractMessage m) throws Exception {
+    public void sendMessage(AbstractMessage m) throws IOException {
         Log.d(TAG, getSessionName() + " Send message (type=" +m.getMessageType() + ")");
         synchronized (_outputSocketSync) {
-            m.encode(_outputStream, _protocolVersion);
-            _outputStream.flush();
+            m.write(_stream, _protocolVersion);
+            _stream.flush();
         }
     }
 
@@ -135,15 +137,7 @@ final class ClientSession implements Closeable, Runnable {
             _inputThread.interrupt();
         }
         try {
-            if (_inputStream != null) _inputStream.close();
-        } catch (Exception ex) {
-        }
-        try {
-            if (_outputStream != null) _outputStream.close();
-        } catch (Exception ex) {
-        }
-        try {
-            if (_socket != null) _socket.close();
+            if (_stream != null) _stream.close();
         } catch (Exception ex) {
         }
     }
@@ -160,14 +154,14 @@ final class ClientSession implements Closeable, Runnable {
             while (!disconnect && !_inputThread.isInterrupted()) {
 
                 Log.d(TAG, getSessionName() + " Wait message");
-                byte fixedHeader = (byte) _inputStream.read();
+                byte fixedHeader = _stream.read();
                 if (_inputThread.isInterrupted()) break;
 
                 AbstractMessage m = MessageFactory.Create(fixedHeader, _protocolVersion);
                 if (m != null) {
                     Log.d(TAG, getSessionName() +
                             " Receive message (type=" + m.getMessageType() + ")");
-                    m.decode(_inputStream, fixedHeader, _protocolVersion);
+                    m.read(_stream, fixedHeader, _protocolVersion);
 
                     switch (m.getMessageType()) {
                         case AbstractMessage.CONNECT:
@@ -197,7 +191,7 @@ final class ClientSession implements Closeable, Runnable {
                             " Receive BAD message (fixedHeader=" + fixedHeader + ")");
                 }
             }
-        } catch (SocketTimeoutException ex) {
+        } catch (TimeoutException ex) {
             Log.e(TAG, getSessionName() + " ClientSession timeout", ex);
         } catch (IOException ex) {
             Log.e(TAG, getSessionName() + " ClientSession exception", ex);

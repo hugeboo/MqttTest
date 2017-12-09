@@ -16,13 +16,14 @@
 //package org.eclipse.moquette.proto.messages;
 package ru.dotkit.mqtt.utils.Messages;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
-import ru.dotkit.mqtt.utils.CodecUtils;
-import ru.dotkit.mqtt.utils.ReadedString;
+import ru.dotkit.mqtt.utils.DataStream.IMqttDataStream;
 
 /**
  *
@@ -76,13 +77,14 @@ public class SubscribeMessage extends AbstractMessage {// MessageIDMessage {
     }
 
     @Override
-    public void decode(InputStream stream, byte fixHeader, byte protocolVersion) throws Exception {
-        super.decode(stream, fixHeader, protocolVersion);
+    public void read(IMqttDataStream stream, byte fixHeader, byte protocolVersion)
+            throws IOException, TimeoutException {
+        super.read(stream, fixHeader, protocolVersion);
 
-        m_messageID = CodecUtils.readUShort(stream);
+        m_messageID = stream.readUShort();
 
         if (m_qos != QOS_1) {
-            throw new Exception();
+            throw new IOException("QoS is not equal QOS_1");
         }
 
         int p = 0;
@@ -92,62 +94,31 @@ public class SubscribeMessage extends AbstractMessage {// MessageIDMessage {
         }
 
         if (subscriptions().isEmpty()) {
-            throw new Exception();
+            throw new IOException("Subscriptions is empty");
         }
     }
 
     @Override
-    public void encode(OutputStream stream, byte protocolVersion) throws Exception {
-        super.encode(stream, protocolVersion);
+    public void write(IMqttDataStream stream, byte protocolVersion) throws IOException {
+        super.write(stream, protocolVersion);
 
-        throw new Exception("Not implemented");
+        throw new IOException("Not implemented");
     }
-
-//    @Override
-//    public boolean decodeMessageBody(byte[] body) {
-//        try {
-//            ByteBuffer buffer = ByteBuffer.wrap(body);
-//            setMessageID(CodecUtils.readUShort(buffer));
-//
-//            while (buffer.position() < body.length) {
-//                decodeSubscription(buffer, this);
-//            }
-//
-//            return true;
-//        } catch (Exception ex) {
-//            return false;
-//        }
-//    }
-//
-//    @Override
-//    public boolean verify(byte protocolVersion) {
-//
-//        if (!super.verify(protocolVersion)) return false;
-//
-//        if (m_qos != QOSType.LEAST_ONE) {
-//            return false;
-//        }
-//
-//        if (subscriptions().isEmpty()) {
-//            return false;
-//        }
-//
-//        return true;
-//    }
 
     /**
      * Populate the message with couple of Qos, topic
      */
-    private static int decodeSubscription(InputStream stream, SubscribeMessage message) throws Exception {
-        ReadedString rs = CodecUtils.readString(stream);
-        String topic = rs.s;
-        byte qosByte = (byte)stream.read();
+    private static int decodeSubscription(IMqttDataStream stream, SubscribeMessage message)
+            throws IOException, TimeoutException {
+        long p0 = stream.getInputPosition();
+        String topic = stream.readString();
+        byte qosByte = (byte) stream.read();
         if ((qosByte & 0xFC) > 0) { //the first 6 bits is reserved => has to be 0
-            throw new Exception();
+            throw new IOException("QoS is equal QOS_RESERVED");
         }
         byte qos = (byte) (qosByte & 0x03);
         //TODO check qos id 000000xx
         message.addSubscription(new SubscribeMessage.Couple(qos, topic));
-        return rs.byteLength + 1;
+        return (int) (stream.getInputPosition() - p0);
     }
 }

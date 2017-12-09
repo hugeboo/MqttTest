@@ -5,7 +5,7 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import ru.dotkit.mqtt.utils.CodecUtils;
+import ru.dotkit.mqtt.utils.DataStream.MqttDataStream;
 import ru.dotkit.mqtt.utils.MessageFactory;
 import ru.dotkit.mqtt.utils.StaticValues;
 
@@ -22,7 +22,7 @@ public class UnsubscribeMessage311UnitTest {
         byte p = StaticValues.VERSION_3_1_1;
 
         byte fh = (byte) (AbstractMessage.UNSUBSCRIBE << 4 | 0x02);
-        byte[] bytes = new byte[]{fh, 0x0E,
+        byte[] bytes = new byte[]{fh, 0x0B,
                 0x03, 0x0F, //messageId
                 0x00, 0x01, 'A', //topic
                 0x00, 0x01, 'B', //topic
@@ -35,7 +35,7 @@ public class UnsubscribeMessage311UnitTest {
         assertEquals(AbstractMessage.UNSUBSCRIBE, am.getMessageType());
 
         UnsubscribeMessage m = (UnsubscribeMessage) am;
-        m.decode(in, fh, p);
+        m.read(new MqttDataStream(in,null), fh, p);
         assertEquals(0x030F, m.getMessageID());
         assertEquals("A", m.topicFilters().get(0));
         assertEquals("B", m.topicFilters().get(1));

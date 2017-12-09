@@ -16,10 +16,12 @@
 //package org.eclipse.moquette.proto.messages;
 package ru.dotkit.mqtt.utils.Messages;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.TimeoutException;
 
-import ru.dotkit.mqtt.utils.CodecUtils;
+import ru.dotkit.mqtt.utils.DataStream.IMqttDataStream;
 import ru.dotkit.mqtt.utils.StaticValues;
 
 /**
@@ -164,28 +166,29 @@ public class ConnectMessage extends AbstractMessage {
     }
 
     @Override
-    public void decode(InputStream stream, byte fixHeader, byte protocolVersion) throws Exception {
-        super.decode(stream, fixHeader, protocolVersion);
+    public void read(IMqttDataStream stream, byte fixHeader, byte protocolVersion)
+            throws IOException, TimeoutException {
+        super.read(stream, fixHeader, protocolVersion);
 
-        m_protocolName = CodecUtils.readString(stream).s;
-        m_protocolVersion = (byte) stream.read();
+        m_protocolName = stream.readString();
+        m_protocolVersion = stream.read();
 
         if (!(("MQIsdp".equals(m_protocolName) && m_protocolVersion == StaticValues.VERSION_3_1) ||
                 ("MQTT".equals(m_protocolName) && m_protocolVersion == StaticValues.VERSION_3_1_1))) {
-            throw new Exception();
+            throw new IOException("Bad version");
         }
 
         if (m_protocolVersion == StaticValues.VERSION_3_1_1) {
             if (isDupFlag() || isRetainFlag() || getQos() != QOS_0) {
-                throw new Exception();
+                throw new IOException("Bad flags");
             }
         }
 
         //Connection flag
-        int connFlags = stream.read();
+        byte connFlags = stream.read();
         if (m_protocolVersion == StaticValues.VERSION_3_1_1) {
             if ((connFlags & 0x01) != 0) { //bit(0) of connection flags is != 0
-                throw new Exception("Received a CONNECT with connectionFlags[0(bit)] != 0");
+                throw new IOException("Received a CONNECT with connectionFlags[0(bit)] != 0");
             }
         }
 
@@ -193,7 +196,7 @@ public class ConnectMessage extends AbstractMessage {
         boolean willFlag = ((connFlags & 0x04) >> 2) == 1 ? true : false;
         byte willQos = (byte) ((connFlags & 0x18) >> 3);
         if (willQos > 2) {
-            throw new Exception("Expected will QoS in range 0..2 but found: " + willQos);
+            throw new IOException("Expected will QoS in range 0..2 but found: " + willQos);
         }
         boolean willRetain = ((connFlags & 0x20) >> 5) == 1 ? true : false;
         boolean passwordFlag = ((connFlags & 0x40) >> 6) == 1 ? true : false;
@@ -201,7 +204,7 @@ public class ConnectMessage extends AbstractMessage {
 
         //a password is true iff user is true.
         if (!userFlag && passwordFlag) {
-            throw new Exception("Expected password flag to true if the user flag is true but was: " + passwordFlag);
+            throw new IOException("Expected password flag to true if the user flag is true but was: " + passwordFlag);
         }
 
         m_cleanSession = cleanSession;
@@ -212,7 +215,7 @@ public class ConnectMessage extends AbstractMessage {
         m_userFlag = userFlag;
 
         //Keep Alive timer 2 bytes
-        m_keepAlive = CodecUtils.readUShort(stream);
+        m_keepAlive = stream.readUShort();
 
         if ((m_remainingLength == 12 && m_protocolVersion == StaticValues.VERSION_3_1) ||
                 (m_remainingLength == 10 && m_protocolVersion == StaticValues.VERSION_3_1_1)) {
@@ -220,28 +223,25 @@ public class ConnectMessage extends AbstractMessage {
         }
 
         //Decode the ClientID
-        String clientID = CodecUtils.readString(stream).s;
-        if (clientID == null || clientID == "") {
-            throw new Exception();
+        m_clientID = stream.readString();
+        if (m_clientID == null || m_clientID.isEmpty()) {
+            throw new IOException("clientID unspecified");
         }
-        m_clientID = clientID;
 
         //Decode willTopic
         if (willFlag) {
-            String willTopic = CodecUtils.readString(stream).s;
-            if (willTopic == null) {
-                throw new Exception();
+            m_willTopic = stream.readString();
+            if (m_willTopic == null) {
+                throw new IOException("willTopic unspecified");
             }
-            m_willTopic = willTopic;
         }
 
         //Decode willMessage
         if (willFlag) {
-            String willMessage = CodecUtils.readString(stream).s;
-            if (willMessage == null) {
-                throw new Exception();
+            m_willMessage = stream.readString();
+            if (m_willMessage == null) {
+                throw new IOException("willMessage unspecified");
             }
-            m_willMessage = willMessage;
         }
 
 //        //Compatibility check with v3.0, remaining length has precedence over
@@ -254,11 +254,10 @@ public class ConnectMessage extends AbstractMessage {
 
         //Decode username
         if (userFlag) {
-            String userName = CodecUtils.readString(stream).s;
-            if (userName == null) {
-                throw new Exception();
+            m_username = stream.readString();
+            if (m_username == null) {
+                throw new IOException("username unspecified");
             }
-            m_username = userName;
         }
 
 //        readed = in.readerIndex() - start;
@@ -269,93 +268,17 @@ public class ConnectMessage extends AbstractMessage {
 
         //Decode password
         if (passwordFlag) {
-            String password = CodecUtils.readString(stream).s;
-            if (password == null) {
-                throw new Exception();
+            m_password = stream.readString();
+            if (m_password == null) {
+                throw new IOException("password unspecified");
             }
-            m_password = password;
         }
     }
 
     @Override
-    public void encode(OutputStream stream, byte protocolVersion) throws Exception {
-        super.encode(stream, protocolVersion);
+    public void write(IMqttDataStream stream, byte protocolVersion) throws IOException {
+        super.write(stream, protocolVersion);
 
-        throw new Exception("Not implemented");
+        throw new IOException("Not implemented");
     }
-
-//    @Override
-//    public boolean decodeMessageBody(byte[] body) {
-//        try {
-//            ByteBuffer buffer = ByteBuffer.wrap(body);
-//            m_protocolName = CodecUtils.readString(buffer);
-//
-//            m_protocolVersion = buffer.get();
-//
-//            byte connFlags = buffer.get();
-//            m_cleanSession = ((connFlags & 0x02) >> 1) == 1 ? true : false;
-//            m_willFlag = ((connFlags & 0x04) >> 2) == 1 ? true : false;
-//            m_willQos = AbstractMessage.QOSType.values()[(byte) ((connFlags & 0x18) >> 3)];
-//            m_willRetain = ((connFlags & 0x20) >> 5) == 1 ? true : false;
-//            m_passwordFlag = ((connFlags & 0x40) >> 6) == 1 ? true : false;
-//            m_userFlag = ((connFlags & 0x80) >> 7) == 1 ? true : false;
-//
-//            m_keepAlive = CodecUtils.readUShort(buffer);
-//            m_clientID = CodecUtils.readString(buffer);
-//
-//            if (m_willFlag) {
-//                m_willTopic = CodecUtils.readString(buffer);
-//                m_willMessage = CodecUtils.readString(buffer);
-//            }
-//
-//            if (m_userFlag) {
-//                m_username = CodecUtils.readString(buffer);
-//            }
-//
-//            if (m_passwordFlag) {
-//                m_password = CodecUtils.readString(buffer);
-//            }
-//
-//            return true;
-//        } catch (Exception ex) {
-//            return false;
-//        }
-//    }
-//
-//    @Override
-//    public boolean verify(byte protocolVersion) {
-//
-//        if (!super.verify(protocolVersion)) return false;
-//
-//        if (!(("MQIsdp".equals(m_protocolName) && m_protocolVersion == CodecUtils.VERSION_3_1) ||
-//                ("MQTT".equals(m_protocolName) && m_protocolVersion == CodecUtils.VERSION_3_1_1))) {
-//            return false;
-//        }
-//
-//        if (m_protocolVersion == CodecUtils.VERSION_3_1_1) {
-//            //if 3.1.1, check the flags (dup, retain and qos == 0)
-//            if (isDupFlag() || isRetainFlag() || getQos() != AbstractMessage.QOSType.MOST_ONE) {
-//                return false;
-//            }
-//        }
-//
-//        //a password is true iff user is true.
-//        if (!m_userFlag && m_passwordFlag) {
-//            return false;
-//        }
-//
-//        if (m_clientID == null ||
-//                (m_willFlag && m_willTopic == null) ||
-//                (m_willFlag && m_willMessage == null) ||
-//                (m_userFlag && m_username == null) ||
-//                (m_passwordFlag && m_password == null)) {
-//            return false;
-//        }
-//
-//        if (m_willQos == QOSType.RESERVED) {
-//            return false;
-//        }
-//
-//        return true;
-//    }
 }

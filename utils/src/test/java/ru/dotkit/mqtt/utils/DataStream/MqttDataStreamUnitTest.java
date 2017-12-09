@@ -8,9 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import ru.dotkit.mqtt.utils.CodecUtils;
-import ru.dotkit.mqtt.utils.ReadedString;
-
 import static org.junit.Assert.*;
 
 /**

@@ -6,7 +6,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
-import ru.dotkit.mqtt.utils.CodecUtils;
+import ru.dotkit.mqtt.utils.DataStream.MqttDataStream;
 import ru.dotkit.mqtt.utils.MessageFactory;
 import ru.dotkit.mqtt.utils.StaticValues;
 
@@ -36,7 +36,7 @@ public class PublishMessage311UnitTest {
         assertEquals(PublishMessage.PUBLISH, am.getMessageType());
 
         PublishMessage m = (PublishMessage) am;
-        m.decode(in, fh, p);
+        m.read(new MqttDataStream(in,null), fh, p);
         assertTrue(m.isDupFlag());
         assertTrue(m.isRetainFlag());
         assertEquals(AbstractMessage.QOS_1, m.getQos());
@@ -45,7 +45,7 @@ public class PublishMessage311UnitTest {
         assertArrayEquals(new byte[]{0x01, 0x02, 0x03}, m.getPayload());
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        m.encode(out, p);
+        m.write(new MqttDataStream(null,out), p);
         byte[] bb = out.toByteArray();
         assertArrayEquals(bytes, bb);
     }

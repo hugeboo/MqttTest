@@ -16,10 +16,12 @@
 //package org.eclipse.moquette.proto.messages;
 package ru.dotkit.mqtt.utils.Messages;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.TimeoutException;
 
-import ru.dotkit.mqtt.utils.CodecUtils;
+import ru.dotkit.mqtt.utils.DataStream.IMqttDataStream;
 
 /**
  *
@@ -42,18 +44,19 @@ public class PubCompMessage extends AbstractMessage {// MessageIDMessage {
     }
 
     @Override
-    public void decode(InputStream stream, byte fixHeader, byte protocolVersion) throws Exception {
-        super.decode(stream, fixHeader, protocolVersion);
+    public void read(IMqttDataStream stream, byte fixHeader, byte protocolVersion)
+            throws IOException, TimeoutException {
+        super.read(stream, fixHeader, protocolVersion);
 
-        m_messageID = CodecUtils.readUShort(stream);
-        throw new Exception("Not implemented");
+        m_messageID = stream.readUShort();
+        throw new IOException("Not implemented");
     }
 
     @Override
-    public void encode(OutputStream stream, byte protocolVersion) throws Exception {
-        super.encode(stream, protocolVersion);
+    public void write(IMqttDataStream stream, byte protocolVersion) throws IOException {
+        super.write(stream, protocolVersion);
 
-        throw new Exception("Not implemented");
+        throw new IOException("Not implemented");
     }
 }
 

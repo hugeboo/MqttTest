@@ -5,7 +5,7 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import ru.dotkit.mqtt.utils.CodecUtils;
+import ru.dotkit.mqtt.utils.DataStream.MqttDataStream;
 import ru.dotkit.mqtt.utils.MessageFactory;
 import ru.dotkit.mqtt.utils.StaticValues;
 
@@ -36,7 +36,7 @@ public class SubscribeMessage311UnitTest {
         assertEquals(AbstractMessage.SUBSCRIBE, am.getMessageType());
 
         SubscribeMessage m = (SubscribeMessage) am;
-        m.decode(in, fh, p);
+        m.read(new MqttDataStream(in,null), fh, p);
         assertEquals(0x030F, m.getMessageID());
         assertEquals("A",m.subscriptions().get(0).getTopicFilter());
         assertEquals(0x00,m.subscriptions().get(0).getQos());

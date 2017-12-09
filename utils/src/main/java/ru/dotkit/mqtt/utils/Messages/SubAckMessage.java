@@ -16,12 +16,14 @@
 //package org.eclipse.moquette.proto.messages;
 package ru.dotkit.mqtt.utils.Messages;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
-import ru.dotkit.mqtt.utils.CodecUtils;
+import ru.dotkit.mqtt.utils.DataStream.IMqttDataStream;
 
 /**
  *
@@ -40,7 +42,7 @@ public class SubAckMessage extends AbstractMessage {//} MessageIDMessage {
     }
 
     List<Byte> m_types = new ArrayList<Byte>();
-    
+
     public SubAckMessage() {
         m_messageType = AbstractMessage.SUBACK;
     }
@@ -54,27 +56,28 @@ public class SubAckMessage extends AbstractMessage {//} MessageIDMessage {
     }
 
     @Override
-    public void decode(InputStream stream, byte fixHeader, byte protocolVersion) throws Exception {
-        super.decode(stream, fixHeader, protocolVersion);
+    public void read(IMqttDataStream stream, byte fixHeader, byte protocolVersion)
+            throws IOException, TimeoutException {
+        super.read(stream, fixHeader, protocolVersion);
 
-        m_messageID = CodecUtils.readUShort(stream);
+        m_messageID = stream.readUShort();
 
         //Qos array
-        for (int i = 0; i < m_remainingLength-2; i++) {
-            byte qos = (byte)stream.read();
+        for (int i = 0; i < m_remainingLength - 2; i++) {
+            byte qos = (byte) stream.read();
             addType(qos);
         }
     }
 
     @Override
-    public void encode(OutputStream stream, byte protocolVersion) throws Exception {
-        super.encode(stream, protocolVersion);
+    public void write(IMqttDataStream stream, byte protocolVersion) throws IOException {
+        super.write(stream, protocolVersion);
 
         if (types().isEmpty()) {
-            throw new IllegalArgumentException("Found a suback message with empty topics");
+            throw new IOException("Found a suback message with empty topics");
         }
-        CodecUtils.encodeRemainingLength(stream, 2 + m_types.size());
-        CodecUtils.writeUShort(stream, getMessageID());
+        stream.writeRemainingLength(2 + m_types.size());
+        stream.writeUShort(getMessageID());
         for (Byte c : m_types) {
             stream.write(c);
         }

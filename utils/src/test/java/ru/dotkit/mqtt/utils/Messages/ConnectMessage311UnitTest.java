@@ -5,7 +5,7 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import ru.dotkit.mqtt.utils.CodecUtils;
+import ru.dotkit.mqtt.utils.DataStream.MqttDataStream;
 import ru.dotkit.mqtt.utils.MessageFactory;
 import ru.dotkit.mqtt.utils.StaticValues;
 
@@ -42,7 +42,7 @@ public class ConnectMessage311UnitTest {
         assertEquals(AbstractMessage.CONNECT, am.getMessageType());
 
         ConnectMessage m = (ConnectMessage) am;
-        m.decode(in, fh, p);
+        m.read(new MqttDataStream(in,null), fh, p);
         assertEquals("MQTT", m.getProtocolName());
         assertEquals(p, m.getProtocolVersion());
         assertTrue(m.isUserFlag());

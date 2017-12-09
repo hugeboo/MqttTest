@@ -16,10 +16,12 @@
 //package org.eclipse.moquette.proto.messages;
 package ru.dotkit.mqtt.utils.Messages;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.TimeoutException;
 
-import ru.dotkit.mqtt.utils.CodecUtils;
+import ru.dotkit.mqtt.utils.DataStream.IMqttDataStream;
 
 /**
  * Doesn't care DUP, QOS and RETAIN flags.
@@ -33,16 +35,17 @@ public class DisconnectMessage extends AbstractMessage {// ZeroLengthMessage {
     }
 
     @Override
-    public void decode(InputStream stream, byte fixHeader, byte protocolVersion) throws Exception {
-        super.decode(stream, fixHeader, protocolVersion);
+    public void read(IMqttDataStream stream, byte fixHeader, byte protocolVersion)
+            throws IOException, TimeoutException {
+        super.read(stream, fixHeader, protocolVersion);
 
-        if (m_remainingLength != 0) throw new Exception();
+        if (m_remainingLength != 0) throw new IOException("RemainingLength must be 0");
     }
 
     @Override
-    public void encode(OutputStream stream, byte protocolVersion) throws Exception {
-        super.encode(stream, protocolVersion);
+    public void write(IMqttDataStream stream, byte protocolVersion) throws IOException {
+        super.write(stream, protocolVersion);
 
-        CodecUtils.encodeRemainingLength(stream, 0);
+        stream.writeRemainingLength(0);
     }
 }

@@ -16,12 +16,15 @@
 //package org.eclipse.moquette.proto.messages;
 package ru.dotkit.mqtt.utils.Messages;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.TimeoutException;
 
-import ru.dotkit.mqtt.utils.CodecUtils;
-import ru.dotkit.mqtt.utils.ReadedString;
+import ru.dotkit.mqtt.utils.DataStream.IMqttDataStream;
+import ru.dotkit.mqtt.utils.DataStream.MqttDataStream;
 import ru.dotkit.mqtt.utils.StaticValues;
 
 /**
@@ -64,64 +67,67 @@ public class PublishMessage extends AbstractMessage {//} MessageIDMessage {
     }
 
     @Override
-    public void decode(InputStream stream, byte fixHeader, byte protocolVersion) throws Exception {
-        super.decode(stream, fixHeader, protocolVersion);
+    public void read(IMqttDataStream stream, byte fixHeader, byte protocolVersion)
+            throws IOException, TimeoutException {
+        super.read(stream, fixHeader, protocolVersion);
 
         if (protocolVersion == StaticValues.VERSION_3_1_1) {
             if (m_qos == QOS_0 && m_dupFlag) {
                 //bad protocol, if QoS=0 => DUP = 0
-                throw new Exception("Received a PUBLISH with QoS=0 & DUP = 1, MQTT 3.1.1 violation");
+                throw new IOException("Received a PUBLISH with QoS=0 & DUP = 1, MQTT 3.1.1 violation");
             }
         }
 
-        int varHeaderLength = 0;
+        long p0 = stream.getInputPosition();
 
         //Topic name
-        ReadedString topic = CodecUtils.readString(stream);
-        if (topic == null) {
-            throw new Exception();
+        String topic = stream.readString();
+        if (topic == null || topic.isEmpty()) {
+            throw new IOException("Topic unspecified");
         }
-        if (topic.s.contains("+") || topic.s.contains("#")) {
-            throw new Exception("Received a PUBLISH with topic containting wild card chars, topic: " + topic);
+        if (topic.contains("+") || topic.contains("#")) {
+            throw new IOException("Received a PUBLISH with topic containting wild card chars, topic: " + topic);
         }
-        m_topicName = topic.s;
-        varHeaderLength += topic.byteLength;
+        m_topicName = topic;
 
         if (m_qos == QOS_1 || m_qos == QOS_2) {
-            m_messageID = CodecUtils.readUShort(stream);
-            varHeaderLength += 2;
+            m_messageID = stream.readUShort();
         }
 
         //read the payload
+        int varHeaderLength = (int) (stream.getInputPosition() - p0);
         int payloadSize = m_remainingLength - varHeaderLength;
         m_payload = new byte[payloadSize];
         stream.read(m_payload);
     }
 
     @Override
-    public void encode(OutputStream stream, byte protocolVersion) throws Exception {
-        super.encode(stream, protocolVersion);
+    public void write(IMqttDataStream stream, byte protocolVersion) throws IOException {
+        super.write(stream, protocolVersion);
 
         if (m_qos == QOS_RESERVED) {
-            throw new IllegalArgumentException("Found a message with RESERVED Qos");
+            throw new IOException("Found a message with RESERVED Qos");
         }
-        if (m_topicName == null || m_topicName == "") {
-            throw new IllegalArgumentException("Found a message with empty or null topic name");
+        if (m_topicName == null || m_topicName.isEmpty()) {
+            throw new IOException("Found a message with empty or null topic name");
         }
 
-        ByteArrayOutputStream variableHeaderBuff = new ByteArrayOutputStream();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        IMqttDataStream varHeadStream = new MqttDataStream(null, bos);
 
-        CodecUtils.writeString(variableHeaderBuff, m_topicName);
+        long p0 = varHeadStream.getOutputPosition();
 
-        if (m_qos == QOS_1 || m_qos == QOS_1) {
+        varHeadStream.writeString(m_topicName);
+
+        if (m_qos == QOS_1 || m_qos == QOS_2) {
             if (getMessageID() == 0) {
-                throw new IllegalArgumentException("Found a message with QOS 1 or 2 and not MessageID setted");
+                throw new IOException("Found a message with QOS 1 or 2 and not MessageID setted");
             }
-            CodecUtils.writeUShort(variableHeaderBuff, getMessageID());
+            varHeadStream.writeUShort(getMessageID());
         }
-        variableHeaderBuff.write(m_payload);
+        varHeadStream.write(m_payload);
 
-        CodecUtils.encodeRemainingLength(stream, variableHeaderBuff.size());
-        stream.write(variableHeaderBuff.toByteArray());
+        stream.writeRemainingLength((int) (varHeadStream.getOutputPosition() - p0));
+        stream.write(bos.toByteArray());
     }
 }

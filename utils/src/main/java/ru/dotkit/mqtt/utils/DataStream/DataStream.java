@@ -3,6 +3,7 @@ package ru.dotkit.mqtt.utils.DataStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -23,19 +24,27 @@ public class DataStream implements IDataStream {
 
     @Override
     public final byte read() throws IOException, TimeoutException {
-        int i = _inputStream.read();
-        if (i < 0) {
-            throw new IOException("InputStream return -1 (end of stream)");
+        try {
+            int i = _inputStream.read();
+            if (i < 0) {
+                throw new IOException("InputStream return -1 (end of stream)");
+            }
+            _inputPosition += 1;
+            return (byte) i;
+        } catch (SocketTimeoutException ex) {
+            throw new TimeoutException("SocketTimeout: " + ex.getMessage());
         }
-        _inputPosition += 1;
-        return (byte) i;
     }
 
     @Override
     public final void read(byte[] buffer) throws IOException, IllegalArgumentException, TimeoutException {
-        if (buffer == null) throw new IllegalArgumentException();
-        for (int i = 0; i < buffer.length; i++) {
-            buffer[i] = read();
+        try {
+            if (buffer == null) throw new IllegalArgumentException();
+            for (int i = 0; i < buffer.length; i++) {
+                buffer[i] = read();
+            }
+        } catch (SocketTimeoutException ex) {
+            throw new TimeoutException("SocketTimeout: " + ex.getMessage());
         }
     }
 
